@@ -1,31 +1,38 @@
 //define bases
-let cronograma = base.getTable("Cronograma");
-let monitoria = base.getTable("Monitoria Turmas");
+const cronograma = base.getTable("Cronograma");
+const monitoria = base.getTable("Monitoria Turmas");
 
 //define views
 let cronoCorp = cronograma.getView("Academias Corp Ativas");
 let moniCorp = monitoria.getView("[Corp] Coleta de Dados");
 
-//define campos em que a ação vai acontecer
+//define queries
 let queryCorp = await moniCorp.selectRecordsAsync({
-  fields: ["Aula", "Link de gravação da aula"],
+    fields: ["Crono RecID","Link de gravação da aula"],
+    sorts: [
+    {field: "Crono RecID", direction: "desc"}]
 });
-
-//pra cada form, retorna link enviado
-for (let record of queryCorp.records) {
-  let link = record.getCellValueAsString("Link de gravação da aula");
-  output.set("link", link);
-}
-
-//define campos em que a ação vai acontecer 
 let queryCrono = await cronoCorp.selectRecordsAsync({
-  fields: ["Record ID", "Tipo de conteúdo", "Link da gravação"],
-  sorts: [{ field: "Data", direction: "desc" }],
+    fields: ["Record ID","Link da gravação","Tipo de conteúdo"],
+    sorts: [
+    {field: "Record ID", direction: "desc"}]
 });
 
-//pra cada aula, retorna ID
-for (let record of queryCrono.records) {
-  let recID = record.id;
-  output.set("recID", recID);
+//pra cada form, pega link enviado
+for (let range of queryCorp.records) {
+    let recIdMoni = range.getCellValueAsString("Crono RecID");
+    let link = range.getCellValueAsString("Link de gravação da aula");
+    output.set("Link de gravação da aula", link)
+
+//pra cada aula, pega record ID
+    for (let record of queryCrono.records) {
+    let recIdCrono = record.getCellValue("Record ID");
+    let selectedField = {field:"Link da gravação"};
+
+//se record ID é igual nas duas tabelas, atualiza campo Link da gravação com link enviado no form
+    if(recIdMoni == recIdCrono){
+        await cronograma.updateRecordAsync(record, {[selectedField.field]: link})
+        }
+    }
 }
 
